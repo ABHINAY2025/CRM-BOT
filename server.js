@@ -439,6 +439,7 @@ app.get('/api/stats', ah(async (_req, res) => {
   });
 }));
 app.get('/api/activity', ah(async (_req, res) => res.json(await store.listActivity(100))));
+app.get('/api/changes', ah(async (_req, res) => { res.set('Cache-Control', 'no-store'); res.json({ v: await store.changeVersion() }); }));
 
 // ---------------------------------------------------------------- API: contacts
 app.get('/api/contacts', ah(async (req, res) => {

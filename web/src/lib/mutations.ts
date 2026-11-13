@@ -58,22 +58,38 @@ export function useLiveEvents() {
     let es: EventSource | null = null
     let poll: ReturnType<typeof setInterval> | null = null
     let cancelled = false
-    // Serverless hosting (Vercel) can't keep a live connection open → poll every 5 s instead
+    let cleanup = () => {}
+    // Serverless hosting (Vercel) can't keep a live connection open → every 2 s ask the
+    // server for one tiny "change version" and only reload data when it actually changed.
     api<{ config: { realtime?: string } }>("/bootstrap").then((b) => {
       if (cancelled) return
       if (b.config.realtime === "poll") {
         let lastSeen = new Date().toISOString()
-        poll = setInterval(async () => {
-          if (document.hidden) return
-          for (const k of ["contacts", "contact", "stats", "tasks", "broadcasts"]) qc.invalidateQueries({ queryKey: [k] })
+        let version = ""
+        let busy = false
+        const tick = async () => {
+          if (document.hidden || busy) return
+          busy = true
           try {
+            const { v } = await api<{ v: string }>("/changes")
+            if (v === version) return
+            const first = !version
+            version = v
+            if (first) return
+            for (const k of ["contacts", "contact", "stats", "tasks", "activity", "broadcasts"]) qc.invalidateQueries({ queryKey: [k] })
             const acts = await api<{ type: string; text: string; contactId: string | null; at: string }[]>("/activity")
             for (const a of acts.filter((x) => x.at > lastSeen && ["hot", "handover"].includes(x.type)).reverse()) {
               toast(a.text, { duration: 10000, action: a.contactId ? { label: "Open", onClick: () => navigate(`/inbox/${a.contactId}`) } : undefined })
             }
-            if (acts[0]) lastSeen = acts[0].at > lastSeen ? acts[0].at : lastSeen
-          } catch { /* ignore */ }
-        }, 5000)
+            if (acts[0] && acts[0].at > lastSeen) lastSeen = acts[0].at
+          } catch { /* ignore a failed poll */ } finally { busy = false }
+        }
+        tick()
+        poll = setInterval(tick, 2000)
+        const onFocus = () => tick()
+        window.addEventListener("focus", onFocus)
+        const prevCleanup = cleanup
+        cleanup = () => { prevCleanup(); window.removeEventListener("focus", onFocus) }
         return
       }
       es = new EventSource("/api/events")
@@ -103,6 +119,6 @@ export function useLiveEvents() {
       if (ev.type === "broadcast") qc.invalidateQueries({ queryKey: ["broadcasts"] })
       if (ev.type === "system") { qc.invalidateQueries({ queryKey: ["system"] }); qc.invalidateQueries({ queryKey: ["bootstrap"] }) }
     }
-    return () => { cancelled = true; es?.close(); if (poll) clearInterval(poll) }
+    return () => { cancelled = true; es?.close(); if (poll) clearInterval(poll); cleanup() }
   }, [qc, navigate])
 }

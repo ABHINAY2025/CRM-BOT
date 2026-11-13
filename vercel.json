@@ -5,11 +5,26 @@
   "buildCommand": "npm --prefix web run build",
   "outputDirectory": "web/dist",
   "functions": {
-    "api/index.js": { "maxDuration": 60, "includeFiles": "lib/**" }
+    "api/index.js": {
+      "maxDuration": 60,
+      "includeFiles": "lib/**"
+    }
   },
   "rewrites": [
-    { "source": "/webhook", "destination": "/api/index" },
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+    {
+      "source": "/webhook",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/((?!assets/).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "regions": [
+    "bom1"
   ]
 }
