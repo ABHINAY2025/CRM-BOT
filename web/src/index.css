@@ -1,0 +1,98 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+
+/* Light-only, Jira-style blue & white theme */
+@theme inline {
+  --font-sans: 'Inter Variable', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: var(--font-sans);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sunken: var(--sunken);
+  --color-subtle: var(--subtle);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-subtle: var(--brand-subtle);
+  --color-brand-subtler: var(--brand-subtler);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --shadow-card: 0 1px 1px rgb(9 30 66 / 0.25), 0 0 1px rgb(9 30 66 / 0.31);
+  --shadow-raised: 0 8px 12px rgb(9 30 66 / 0.15), 0 0 1px rgb(9 30 66 / 0.31);
+  --animate-pop-in: pop-in 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  --animate-pulse-ring: pulse-ring 2s ease-out infinite;
+  @keyframes pop-in { from { opacity: 0; transform: scale(0.96) translateY(4px); } }
+  @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgb(34 160 107 / 0.5); } 70% { box-shadow: 0 0 0 6px rgb(34 160 107 / 0); } 100% { box-shadow: 0 0 0 0 rgb(34 160 107 / 0); } }
+}
+
+:root {
+  color-scheme: light;
+  --radius: 0.5rem;
+  --background: #ffffff;
+  --foreground: #172b4d;
+  --card: #ffffff;
+  --card-foreground: #172b4d;
+  --popover: #ffffff;
+  --popover-foreground: #172b4d;
+  --primary: #0c66e4;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f2f4;
+  --secondary-foreground: #44546f;
+  --muted: #f1f2f4;
+  --muted-foreground: #626f86;
+  --accent: #e9f2ff;
+  --accent-foreground: #0055cc;
+  --destructive: #c9372c;
+  --border: #dcdfe4;
+  --input: #c1c7d0;
+  --ring: #388bff;
+  --sunken: #f7f8f9;
+  --subtle: #44546f;
+  --brand: #0c66e4;
+  --brand-hover: #0055cc;
+  --brand-subtle: #e9f2ff;
+  --brand-subtler: #cce0ff;
+  --chart-1: #1d7afc; /* inbound  */
+  --chart-2: #e06c00; /* outbound */
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  html { @apply font-sans antialiased; }
+  body { @apply bg-background text-foreground text-sm; font-feature-settings: "cv11", "ss01"; }
+  button:not(:disabled), [role="button"]:not(:disabled) { cursor: pointer; }
+  ::selection { background: var(--brand-subtler); }
+}
+
+@layer utilities {
+  .scrollbar-thin { scrollbar-width: thin; scrollbar-color: #c1c7d0 transparent; }
+  .lift { transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease; }
+  .lift:hover { transform: translateY(-1px); box-shadow: var(--shadow-raised); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
