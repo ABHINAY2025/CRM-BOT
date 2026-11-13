@@ -55,9 +55,31 @@ export function useLiveEvents() {
   const qc = useQueryClient()
   const navigate = useNavigate()
   useEffect(() => {
-    const es = new EventSource("/api/events")
-    es.onmessage = (e) => {
-      const ev = JSON.parse(e.data)
+    let es: EventSource | null = null
+    let poll: ReturnType<typeof setInterval> | null = null
+    let cancelled = false
+    // Serverless hosting (Vercel) can't keep a live connection open → poll every 5 s instead
+    api<{ config: { realtime?: string } }>("/bootstrap").then((b) => {
+      if (cancelled) return
+      if (b.config.realtime === "poll") {
+        let lastSeen = new Date().toISOString()
+        poll = setInterval(async () => {
+          if (document.hidden) return
+          for (const k of ["contacts", "contact", "stats", "tasks", "broadcasts"]) qc.invalidateQueries({ queryKey: [k] })
+          try {
+            const acts = await api<{ type: string; text: string; contactId: string | null; at: string }[]>("/activity")
+            for (const a of acts.filter((x) => x.at > lastSeen && ["hot", "handover"].includes(x.type)).reverse()) {
+              toast(a.text, { duration: 10000, action: a.contactId ? { label: "Open", onClick: () => navigate(`/inbox/${a.contactId}`) } : undefined })
+            }
+            if (acts[0]) lastSeen = acts[0].at > lastSeen ? acts[0].at : lastSeen
+          } catch { /* ignore */ }
+        }, 5000)
+        return
+      }
+      es = new EventSource("/api/events")
+      es.onmessage = (e) => handle(JSON.parse(e.data))
+    }).catch(() => {})
+    const handle = (ev: any) => {
       if (ev.type === "message" || ev.type === "status" || ev.type === "contact") {
         qc.invalidateQueries({ queryKey: ["contacts"] })
         if (ev.contactId) qc.invalidateQueries({ queryKey: ["contact", ev.contactId] })
@@ -81,6 +103,6 @@ export function useLiveEvents() {
       if (ev.type === "broadcast") qc.invalidateQueries({ queryKey: ["broadcasts"] })
       if (ev.type === "system") { qc.invalidateQueries({ queryKey: ["system"] }); qc.invalidateQueries({ queryKey: ["bootstrap"] }) }
     }
-    return () => es.close()
+    return () => { cancelled = true; es?.close(); if (poll) clearInterval(poll) }
   }, [qc, navigate])
 }

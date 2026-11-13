@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { LiveDot, UserAvatar } from "@/components/crm/bits"
 import { useUI } from "@/components/crm/dialogs"
 import { ErrorBoundary } from "./error-boundary"
+import { logout } from "./auth-gate"
 
 const NAV = [
   { section: "Planning", items: [
@@ -122,7 +123,7 @@ export function AppShell() {
           </Popover>
           <IconBtn label="Help" onClick={() => window.open("https://developers.facebook.com/docs/whatsapp/cloud-api", "_blank")}><CircleHelp className="size-5" /></IconBtn>
           <IconBtn label="Settings" onClick={() => navigate("/settings")}><Settings className="size-5" /></IconBtn>
-          <div className="ml-1"><UserAvatar name="Me" size={28} /></div>
+          <Tooltip><TooltipTrigger asChild><button onClick={logout} className="ml-1 rounded-full transition hover:ring-2 hover:ring-brand-subtler"><UserAvatar name="Me" size={28} tooltip={false} /></button></TooltipTrigger><TooltipContent>Sign out</TooltipContent></Tooltip>
         </div>
       </header>
 

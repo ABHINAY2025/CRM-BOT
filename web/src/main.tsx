@@ -17,12 +17,14 @@ import Broadcasts from "@/pages/broadcasts"
 import Automations from "@/pages/automations"
 import SettingsPage from "@/pages/settings"
 import BotPage from "@/pages/bot"
+import { AuthGate } from "@/components/layout/auth-gate"
 
 const qc = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: true, staleTime: 5_000 } } })
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={qc}>
+      <AuthGate>
       <BrowserRouter>
         <TooltipProvider delayDuration={300}>
           <UIProvider>
@@ -45,6 +47,7 @@ createRoot(document.getElementById("root")!).render(
         </TooltipProvider>
         <Toaster position="bottom-left" richColors closeButton />
       </BrowserRouter>
+      </AuthGate>
     </QueryClientProvider>
   </StrictMode>,
 )

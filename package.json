@@ -11,15 +11,18 @@
     "dev": "node --watch server.js",
     "dev:web": "npm --prefix web run dev",
     "tunnel": "node tunnel.js",
-    "bot": "node start.js"
+    "bot": "node start.js",
+    "migrate": "node scripts/migrate-json-to-mongo.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
     "@ngrok/ngrok": "^1.7.0",
+    "@vercel/functions": "^3.11.2",
     "dotenv": "^16.4.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "mongodb": "^7.9.0"
   }
 }

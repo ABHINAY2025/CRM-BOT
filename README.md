@@ -47,4 +47,29 @@ UI development with hot reload: run `npm start` in one terminal and `npm run dev
 
 - **Test number:** Meta's test number can only message numbers added in *WhatsApp → API Setup → To* (up to 5). Others fail with error 131030.
 - **24-hour rule:** free-form replies are only allowed within 24h of the customer's last message. After that, send a template.
-- Data is stored in `data/db.json`. Secrets live in `.env`, which is git-ignored.
+- Data is stored in MongoDB (`crm_*` collections, see `MONGO_URI`). Secrets live in `.env`, which is git-ignored.
+
+## Deploy to Vercel
+
+The app runs on Vercel as one serverless function (`api/index.js` → `server.js`) plus the static UI (`web/dist`). Data lives in **MongoDB** (collections prefixed `crm_`).
+
+1. **MongoDB Atlas → Network Access:** allow `0.0.0.0/0` (Vercel has no fixed IPs).
+2. **Vercel → Add New Project →** import this GitHub repo. Leave framework as *Other*; `vercel.json` sets the build.
+3. **Environment variables** (Project → Settings → Environment Variables):
+
+| Name | Value |
+|---|---|
+| `MONGO_URI` | your Atlas connection string |
+| `WA_TOKEN` | permanent System user token |
+| `WA_PHONE_NUMBER_ID`, `WA_BUSINESS_ACCOUNT_ID` | from WhatsApp → API Setup |
+| `WA_APP_SECRET` | Meta app → Settings → Basic (verifies webhook signatures) |
+| `WA_VERIFY_TOKEN` | any secret string; paste the same value in Meta |
+| `GRAPH_VERSION` | `v23.0` |
+| `ANTHROPIC_API_KEY`, `AI_MODEL`, `AI_EFFORT` | Claude key, `claude-sonnet-5-5`, `medium` |
+| `CRM_PASSWORD` | team login password for the CRM |
+| `SESSION_SECRET` | long random string (signs login cookies) |
+| `NODEJS_HELPERS` | `0` (keeps the raw webhook body for signature checks) |
+
+4. Deploy, then in **Meta → WhatsApp → Configuration** set the callback URL to `https://<your-project>.vercel.app/webhook` with your `WA_VERIFY_TOKEN`, and subscribe to `messages`.
+
+On Vercel the CRM refreshes every 5 seconds (no live connection), and the ngrok/tunnel features are not used. Existing local data can be copied once with `npm run migrate`.
