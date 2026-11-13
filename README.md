@@ -2,7 +2,17 @@
 
 A WhatsApp Cloud API CRM with a Jira-style blue and white dashboard (React, Tailwind and shadcn/ui, with `motion` micro animations), keyword bot automations, broadcasts and a built-in ngrok HTTPS tunnel for the Meta webhook.
 
-## Run it
+## Run the bot (one command)
+
+```bash
+npm run bot       # starts the ngrok tunnel + CRM server, restarts either if it crashes
+```
+
+- CRM: http://localhost:3000 (only on this PC — the ngrok URL serves **only** `/webhook`; everything else returns 403).
+- The tunnel prints the Webhook URL + verify token. Set `NGROK_DOMAIN` in `.env` to your free static ngrok domain so this URL never changes.
+- Keep the PC awake (Windows power settings → never sleep) while the bot should answer.
+
+## Run it (separately)
 
 ```bash
 npm run setup     # first time only: installs server + web deps and builds the UI

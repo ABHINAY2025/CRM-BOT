@@ -10,7 +10,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "dev:web": "npm --prefix web run dev",
-    "tunnel": "node tunnel.js"
+    "tunnel": "node tunnel.js",
+    "bot": "node start.js"
   },
   "engines": {
     "node": ">=18"

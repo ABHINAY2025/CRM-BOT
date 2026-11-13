@@ -11,6 +11,15 @@ const db = store.load();
 const PORT = Number(process.env.PORT) || 3000;
 const app = express();
 
+// Tunnel guard: requests arriving through ngrok (they carry X-Forwarded-For / an ngrok host)
+// may only reach the WhatsApp webhook. The CRM and its API stay on this PC (localhost).
+app.use((req, res, next) => {
+  const viaTunnel = !!req.headers['x-forwarded-for'] || /ngrok/i.test(req.headers.host || '');
+  if (viaTunnel && !req.path.startsWith('/webhook') && process.env.PUBLIC_CRM !== 'true') {
+    return res.status(403).type('text').send('Forbidden');
+  }
+  next();
+});
 app.use(express.json({ limit: '5mb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
 const WEB_DIR = path.join(__dirname, 'web', 'dist');
 app.use(express.static(WEB_DIR));
