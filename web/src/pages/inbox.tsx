@@ -52,13 +52,13 @@ function Bubble({ m }: { m: Message }) {
 
 function Thread({ c }: { c: ContactDetail }) {
   const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => { ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "smooth" }) }, [c.messages.length, c.id])
+  useEffect(() => { ref.current?.scrollTo({ top: ref.current.scrollHeight, behavior: "smooth" }) }, [c.messages?.length, c.id])
   let lastDay = ""
   return (
     <div ref={ref} className="scrollbar-thin flex flex-1 flex-col gap-1.5 overflow-y-auto px-6 py-5">
-      {c.messages.length === 0 && <EmptyState icon={MessageSquareText} title="No messages yet">Send an approved template to start the conversation — free-form messages are only allowed within 24h of the customer's last message.</EmptyState>}
+      {!c.messages?.length && <EmptyState icon={MessageSquareText} title="No messages yet">Send an approved template to start the conversation — free-form messages are only allowed within 24h of the customer's last message.</EmptyState>}
       <AnimatePresence initial={false}>
-        {c.messages.map((m) => {
+        {(c.messages || []).map((m) => {
           const day = fmtDate(m.timestamp)
           const sep = day !== lastDay
           lastDay = day

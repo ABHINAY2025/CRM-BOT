@@ -64,9 +64,13 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
     headers: opts.body !== undefined ? { "Content-Type": "application/json" } : undefined,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   })
-  const data = await res.json().catch(() => ({}))
+  let data: any
+  let parsed = true
+  try { data = await res.json() } catch { data = {}; parsed = false }
   if (res.status === 401 && path !== "/login") window.dispatchEvent(new Event("crm-auth-required"))
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
+  // A dropped connection can deliver headers but no body — treat it as a failure, never as empty data
+  if (!parsed) throw new Error("Connection interrupted — retrying")
   return data as T
 }
 

@@ -210,8 +210,8 @@ function ContactDialog({ id, onClose }: { id: string | null; onClose: () => void
 
               <h3 className="mt-6 mb-2 font-semibold">Recent conversation</h3>
               <div className="space-y-1.5 rounded-lg border bg-sunken p-3">
-                {c.messages.length === 0 && <div className="py-4 text-center text-muted-foreground">No messages yet</div>}
-                {c.messages.slice(-6).map((m) => (
+                {!c.messages?.length && <div className="py-4 text-center text-muted-foreground">No messages yet</div>}
+                {(c.messages || []).slice(-6).map((m) => (
                   <div key={m.id} className={cn("max-w-[80%] rounded-lg px-3 py-1.5 shadow-card", m.direction === "out" ? "ml-auto bg-brand-subtle" : "bg-background")}>
                     <div className="whitespace-pre-wrap break-words">{m.text}</div>
                     <div className="text-right text-[11px] text-muted-foreground">{fmtTime(m.timestamp)}</div>
