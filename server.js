@@ -370,14 +370,15 @@ function configSummary() {
   const c = wa.cfg();
   const t = tunnelState();
   return {
-    phoneId: c.phoneId, wabaId: c.wabaId, verifyToken: c.verifyToken, graphVersion: c.version, hasToken: !!c.token, hasSecret: !!c.secret,
+    // Never expose the verify token or account IDs to the browser (customers use this UI)
+    graphVersion: c.version, hasToken: !!c.token, hasSecret: !!c.secret,
     publicUrl: t.publicUrl, webhookUrl: webhookUrl(), ngrokStatus: t.status, ngrokError: t.error,
     webhookRegistered: system.webhookRegistered, webhookError: system.webhookError,
     localUrl: ON_VERCEL ? t.publicUrl : `http://localhost:${PORT}`, hosting: ON_VERCEL ? 'vercel' : 'local', realtime: ON_VERCEL ? 'poll' : 'sse',
   };
 }
 
-app.get('/api/bootstrap', ah(async (_req, res) => res.json({ stages: store.STAGES, settings: await store.getSettings(), config: configSummary() })));
+app.get('/api/bootstrap', ah(async (_req, res) => res.json({ stages: store.STAGES, settings: await store.getSettings(), config: { realtime: ON_VERCEL ? 'poll' : 'sse', hosting: ON_VERCEL ? 'vercel' : 'local' } })));
 app.get('/api/system', ah(async (_req, res) => {
   let phone = null; let phoneError = null;
   try { phone = await wa.phoneInfo(); } catch (e) { phoneError = e.message; }

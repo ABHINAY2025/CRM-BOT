@@ -117,7 +117,6 @@ export default function Contacts() {
                   </form>
                 </PopoverContent>
               </Popover>
-              <Button size="sm" variant="outline" onClick={() => navigate("/broadcasts", { state: { contactIds: [...sel] } })}><Megaphone />Broadcast</Button>
               <Button size="sm" variant="destructive" onClick={bulkDelete}><Trash2 />Delete</Button>
               <Button size="icon-sm" variant="ghost" className="ml-auto" onClick={() => setSel(new Set())}><X /></Button>
             </div>

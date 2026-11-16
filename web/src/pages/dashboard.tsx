@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { motion } from "motion/react"
 import { Activity as ActivityIcon, AlertTriangle, ArrowRight, Bot, CircleDollarSign, Inbox, ListChecks, MessageCircle, Plus, Trophy, Users, Zap } from "lucide-react"
-import { useActivity, useContacts, useStats, useSystem, useTasks } from "@/lib/api"
+import { useActivity, useContacts, useStats, useTasks } from "@/lib/api"
 import { STAGES, compact, displayName, money, timeAgo } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -101,7 +101,6 @@ export default function Dashboard() {
   const { data: activity = [] } = useActivity()
   const { data: contacts = [] } = useContacts()
   const { data: tasks = [] } = useTasks()
-  const { data: sys } = useSystem()
   const navigate = useNavigate()
   const ui = useUI()
   const myTasks = tasks.filter((t) => t.status !== "done").sort((a, b) => (a.dueDate || "9").localeCompare(b.dueDate || "9")).slice(0, 6)
@@ -229,17 +228,6 @@ export default function Dashboard() {
               </div>
             </Card>
 
-            <Card title="Connection health" className="col-span-12">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="flex items-center gap-3"><LiveDot status={sys?.phone ? "ok" : sys?.phoneError ? "err" : "idle"} />
-                  <div><div className="font-medium">WhatsApp Cloud API</div><div className="text-xs text-muted-foreground">{sys?.phone ? `${sys.phone.display_phone_number} · quality ${sys.phone.quality_rating}` : sys?.phoneError || "Checking…"}</div></div></div>
-                <div className="flex items-center gap-3"><LiveDot status={sys?.ngrokStatus === "online" ? "ok" : sys?.ngrokStatus === "error" ? "err" : "idle"} />
-                  <div className="min-w-0"><div className="font-medium">ngrok tunnel</div><div className="truncate text-xs text-muted-foreground">{sys?.publicUrl || sys?.ngrokError || "Starting…"}</div></div></div>
-                <div className="flex items-center gap-3"><LiveDot status={sys?.webhookRegistered ? "ok" : sys?.webhookError ? "err" : "warn"} />
-                  <div className="min-w-0 flex-1"><div className="font-medium">Meta webhook</div><div className="truncate text-xs text-muted-foreground">{sys?.webhookRegistered ? `Registered with app “${sys.webhookRegistered.appName}”` : sys?.webhookError || "Not registered yet"}</div></div>
-                  {!sys?.webhookRegistered && <Button size="sm" variant="secondary" onClick={() => navigate("/settings")}><AlertTriangle />Fix</Button>}</div>
-              </div>
-            </Card>
           </div>
         </motion.div>
       )}

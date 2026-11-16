@@ -46,7 +46,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
       <CreateDialog state={create} onClose={() => setCreate(null)} />
       <ContactDialog id={contactId} onClose={() => setContactId(null)} />
       <TaskDialog task={task} onClose={() => setTask(null)} />
-      <TemplateDialog state={tpl} onClose={() => setTpl(null)} />
     </Ctx.Provider>
   )
 }
@@ -204,7 +203,6 @@ function ContactDialog({ id, onClose }: { id: string | null; onClose: () => void
                 placeholder={c.profileName || c.phone} className="-ml-2 h-11 w-full rounded-md border-2 border-transparent px-2 text-2xl font-semibold outline-none hover:bg-muted focus:border-ring focus:bg-background" />
               <div className="mt-2 flex flex-wrap gap-2">
                 <Button size="sm" onClick={() => { onClose(); navigate(`/inbox/${c.id}`) }}><MessageSquare />Open chat</Button>
-                <Button size="sm" variant="secondary" onClick={() => ui.openTemplate(c.id)}><FileText />Send template</Button>
                 <Button size="sm" variant="secondary" onClick={() => ui.openCreate("task", { contactId: c.id, title: `Follow up with ${displayName(c)}` })}><Plus />Add task</Button>
               </div>
 

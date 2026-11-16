@@ -12,10 +12,6 @@ import Inbox from "@/pages/inbox"
 import Board from "@/pages/board"
 import Contacts from "@/pages/contacts"
 import Tasks from "@/pages/tasks"
-import Templates from "@/pages/templates"
-import Broadcasts from "@/pages/broadcasts"
-import Automations from "@/pages/automations"
-import SettingsPage from "@/pages/settings"
 import BotPage from "@/pages/bot"
 import { AuthGate } from "@/components/layout/auth-gate"
 
@@ -35,11 +31,7 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="board" element={<Board />} />
                 <Route path="contacts" element={<Contacts />} />
                 <Route path="tasks" element={<Tasks />} />
-                <Route path="templates" element={<Templates />} />
-                <Route path="broadcasts" element={<Broadcasts />} />
-                <Route path="automations" element={<Automations />} />
                 <Route path="bot" element={<BotPage />} />
-                <Route path="settings" element={<SettingsPage />} />
                 <Route path="*" element={<Dashboard />} />
               </Route>
             </Routes>

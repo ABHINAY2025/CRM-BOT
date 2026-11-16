@@ -1,10 +1,8 @@
 import { useState } from "react"
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom"
 import { AnimatePresence, motion } from "motion/react"
-import {
-  Bell, Bot, ChevronDown, CircleHelp, Columns3, FileText, Grip, LayoutDashboard, ListChecks, Megaphone, MessageCircle, Plus, Search, Settings, Sprout, Users,
-} from "lucide-react"
-import { useContacts, useSystem } from "@/lib/api"
+import { Bell, Columns3, LayoutDashboard, ListChecks, LogOut, MessageCircle, Plus, Search, Sprout, Users } from "lucide-react"
+import { useContacts, useSettings } from "@/lib/api"
 import { displayName, timeAgo } from "@/lib/format"
 import { useLiveEvents } from "@/lib/mutations"
 import { cn } from "@/lib/utils"
@@ -17,27 +15,16 @@ import { ErrorBoundary } from "./error-boundary"
 import { logout } from "./auth-gate"
 
 const NAV = [
-  { section: "Planning", items: [
+  { section: "Sales", items: [
     { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
     { to: "/inbox", label: "Inbox", icon: MessageCircle, badge: true },
     { to: "/board", label: "Pipeline board", icon: Columns3 },
     { to: "/contacts", label: "Contacts", icon: Users },
     { to: "/tasks", label: "Tasks", icon: ListChecks },
   ] },
-  { section: "Engage", items: [
-    { to: "/bot", label: "GreenBuddy bot", icon: Sprout },
-    { to: "/templates", label: "Templates", icon: FileText },
-    { to: "/broadcasts", label: "Broadcasts", icon: Megaphone },
-    { to: "/automations", label: "Fallback rules", icon: Bot },
+  { section: "Assistant", items: [
+    { to: "/bot", label: "GreenBuddy", icon: Sprout },
   ] },
-  { section: "Project", items: [{ to: "/settings", label: "Project settings", icon: Settings }] },
-]
-
-const TOP = [
-  { to: "/inbox", label: "Your work" },
-  { to: "/board", label: "Projects" },
-  { to: "/contacts", label: "Filters" },
-  { to: "/", label: "Dashboards" },
 ]
 
 function IconBtn({ label, children, onClick }: { label: string; children: React.ReactNode; onClick?: () => void }) {
@@ -57,32 +44,22 @@ export function AppShell() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const { data: contacts = [] } = useContacts()
-  const { data: sys } = useSystem()
+  const { data: settings } = useSettings()
   const [q, setQ] = useState("")
   const unread = contacts.reduce((a, c) => a + (c.unread || 0), 0)
   const unreadList = contacts.filter((c) => c.unread > 0).slice(0, 8)
-  const topActive = TOP.find((t) => (t.to === "/" ? pathname === "/" : pathname.startsWith(t.to)))?.to
-  const linkStatus = sys?.ngrokStatus === "online" && sys.webhookRegistered ? "ok" : sys?.ngrokStatus === "online" ? "warn" : sys?.ngrokStatus === "error" ? "err" : "idle"
+  const botOn = !!settings?.aiEnabled && !!settings?.botEnabled
 
   return (
     <div className="h-screen overflow-hidden">
       {/* ---------- top bar ---------- */}
       <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-1 border-b bg-background px-3">
-        <IconBtn label="Switch apps"><Grip className="size-5" /></IconBtn>
         <NavLink to="/" className="mr-2 flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted">
           <motion.span whileHover={{ rotate: -8, scale: 1.06 }} className="grid size-7 place-items-center rounded-md bg-gradient-to-br from-[#1d7afc] to-[#0055cc] text-white shadow-sm">
             <MessageCircle className="size-4" strokeWidth={2.4} />
           </motion.span>
           <span className="text-[15px] font-bold tracking-tight">WaCRM</span>
         </NavLink>
-        <nav className="hidden h-full items-center gap-0.5 lg:flex">
-          {TOP.map((t) => (
-            <NavLink key={t.label} to={t.to} className={cn("relative flex h-8 items-center gap-1 rounded-md px-2.5 font-medium text-subtle transition-colors hover:bg-muted hover:text-foreground", topActive === t.to && "text-brand")}>
-              {t.label}<ChevronDown className="size-3.5 opacity-60" />
-              {topActive === t.to && <motion.span layoutId="top-underline" className="absolute inset-x-1 -bottom-3 h-[3px] rounded-t bg-brand" />}
-            </NavLink>
-          ))}
-        </nav>
         <Button className="ml-2" onClick={() => ui.openCreate("contact")}><Plus />Create</Button>
 
         <div className="ml-auto flex items-center gap-1">
@@ -121,8 +98,6 @@ export function AppShell() {
               </div>
             </PopoverContent>
           </Popover>
-          <IconBtn label="Help" onClick={() => window.open("https://developers.facebook.com/docs/whatsapp/cloud-api", "_blank")}><CircleHelp className="size-5" /></IconBtn>
-          <IconBtn label="Settings" onClick={() => navigate("/settings")}><Settings className="size-5" /></IconBtn>
           <Tooltip><TooltipTrigger asChild><button onClick={logout} className="ml-1 rounded-full transition hover:ring-2 hover:ring-brand-subtler"><UserAvatar name="Me" size={28} tooltip={false} /></button></TooltipTrigger><TooltipContent>Sign out</TooltipContent></Tooltip>
         </div>
       </header>
@@ -158,13 +133,13 @@ export function AppShell() {
               ))}
             </div>
           ))}
-          <button onClick={() => navigate("/settings")} className="lift mt-auto rounded-lg border bg-sunken p-3 text-left text-xs">
-            <div className="mb-1 flex items-center gap-2 font-semibold"><LiveDot status={linkStatus} />
-              {linkStatus === "ok" ? "Webhook live" : linkStatus === "warn" ? "Tunnel up · webhook not registered" : linkStatus === "err" ? "Tunnel offline" : "Connecting…"}
-            </div>
-            <div className="truncate text-muted-foreground">{sys?.publicUrl?.replace("https://", "") || "ngrok not running"}</div>
-            {sys?.phone && <div className="mt-1 truncate text-muted-foreground">{sys.phone.display_phone_number} · {sys.phone.verified_name}</div>}
-          </button>
+          <div className="mt-auto space-y-1">
+            <button onClick={() => navigate("/bot")} className="lift flex w-full items-center gap-2 rounded-lg border bg-sunken p-3 text-left text-xs">
+              <LiveDot status={botOn ? "ok" : "idle"} />
+              <span className="font-semibold">GreenBuddy is {botOn ? "answering customers" : "paused"}</span>
+            </button>
+            <button onClick={logout} className="flex h-9 w-full items-center gap-2.5 rounded-md px-2 font-medium text-subtle transition-colors hover:bg-muted hover:text-foreground"><LogOut className="size-[18px]" />Sign out</button>
+          </div>
         </aside>
 
         {/* ---------- page ---------- */}

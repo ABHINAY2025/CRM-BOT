@@ -184,7 +184,7 @@ function Simulator({ spec }: { spec: BotSpec }) {
       <div className="flex h-[640px] flex-col overflow-hidden rounded-2xl border-8 border-[#172b4d] bg-[#efeae2] shadow-raised">
         <div className="flex items-center gap-2 bg-[#075e54] px-3 py-2.5 text-white">
           <span className="grid size-8 place-items-center rounded-full bg-white/20"><Sparkles className="size-4" /></span>
-          <div className="flex-1"><div className="text-sm font-semibold">GreenBuddy · Venonto</div><div className="text-[11px] opacity-80">{busy ? "typing…" : "simulator — no WhatsApp, no CRM records"}</div></div>
+          <div className="flex-1"><div className="text-sm font-semibold">GreenBuddy · Venonto</div><div className="text-[11px] opacity-80">{busy ? "typing…" : "test chat — nothing is sent on WhatsApp"}</div></div>
           <button onClick={reset} title="Restart" className="rounded-full p-1.5 hover:bg-white/15"><RotateCcw className="size-4" /></button>
         </div>
         <div ref={ref} className="scrollbar-thin flex flex-1 flex-col gap-1.5 overflow-y-auto p-3">
@@ -293,42 +293,62 @@ const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 function BotSettingsTab({ b }: { b: BotSettings }) {
   const qc = useQueryClient()
   const { data: settings } = useSettings()
-  const { data: ai } = useAiInfo()
   const [f, setF] = useState(b)
-  const [g, setG] = useState({ aiEnabled: true, aiPersona: "", aiFallbackMessage: "" })
+  const [g, setG] = useState({ aiEnabled: true, aiPersona: "", aiFallbackMessage: "", agents: [] as string[], quick: "" })
+  const [newAgent, setNewAgent] = useState("")
   useEffect(() => setF(b), [b])
-  useEffect(() => { if (settings) setG({ aiEnabled: settings.aiEnabled, aiPersona: settings.aiPersona || "", aiFallbackMessage: (settings as any).aiFallbackMessage || "" }) }, [settings])
+  useEffect(() => {
+    if (settings) setG({
+      aiEnabled: settings.aiEnabled, aiPersona: settings.aiPersona || "", aiFallbackMessage: (settings as any).aiFallbackMessage || "",
+      agents: (settings.agents || []).filter((a) => a !== "Unassigned"), quick: (settings.quickReplies || []).join("\n"),
+    })
+  }, [settings])
   const save = async () => {
     await api("/bot/settings", { method: "PUT", body: { ...f, faq: undefined } })
-    await api("/settings", { method: "PUT", body: g })
+    await api("/settings", { method: "PUT", body: {
+      aiEnabled: g.aiEnabled, aiPersona: g.aiPersona, aiFallbackMessage: g.aiFallbackMessage,
+      agents: ["Unassigned", ...g.agents], quickReplies: g.quick.split("\n").map((x) => x.trim()).filter(Boolean),
+    } })
     qc.invalidateQueries({ queryKey: ["botsettings"] }); qc.invalidateQueries({ queryKey: ["settings"] })
-    toast.success("GreenBuddy settings saved")
+    toast.success("Settings saved")
   }
-  const F = ({ label, children }: { label: string; children: React.ReactNode }) => <div className="space-y-1.5"><Label className="text-xs text-subtle">{label}</Label>{children}</div>
+  const addAgent = () => { const n = newAgent.trim(); if (n && !g.agents.includes(n)) setG({ ...g, agents: [...g.agents, n] }); setNewAgent("") }
+  const F = ({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) => <div className="space-y-1.5"><Label className="text-xs text-subtle">{label}</Label>{children}{hint && <p className="text-xs text-muted-foreground">{hint}</p>}</div>
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <div className="space-y-4 rounded-lg border bg-card p-4">
         <div className="flex items-center gap-3">
-          <div className="flex-1"><div className="font-semibold">GreenBuddy replies</div><div className="text-xs text-muted-foreground">When off, the keyword fallback rules answer instead.</div></div>
+          <div className="flex-1"><div className="font-semibold">GreenBuddy answers customers</div><div className="text-xs text-muted-foreground">Turn off to answer every chat yourself from the Inbox.</div></div>
           <Switch checked={g.aiEnabled} onCheckedChange={(v) => setG({ ...g, aiEnabled: v })} />
         </div>
-        <div className="flex flex-wrap gap-1.5"><Lozenge tone={ai?.configured ? "green" : "red"}>{ai?.configured ? "Claude key set" : "No Claude key"}</Lozenge><Lozenge tone="purple">{ai?.model}</Lozenge><Lozenge tone="blue">effort {ai?.effort}</Lozenge><Lozenge tone="teal">refusal fallback on</Lozenge></div>
         <div className="grid grid-cols-2 gap-3">
-          <F label="Bot name"><Input value={f.botName} onChange={(e) => setF({ ...f, botName: e.target.value })} /></F>
-          <F label="Company"><Input value={f.company} onChange={(e) => setF({ ...f, company: e.target.value })} /></F>
+          <F label="Assistant name"><Input value={f.botName} onChange={(e) => setF({ ...f, botName: e.target.value })} /></F>
+          <F label="Company name"><Input value={f.company} onChange={(e) => setF({ ...f, company: e.target.value })} /></F>
           <F label="Reply language"><Input value={f.replyLanguage} onChange={(e) => setF({ ...f, replyLanguage: e.target.value })} /></F>
           <F label="Site visit city"><Input value={f.siteVisitCity} onChange={(e) => setF({ ...f, siteVisitCity: e.target.value })} /></F>
           <F label="Site visit fee (₹)"><Input type="number" value={f.siteVisitFee} onChange={(e) => setF({ ...f, siteVisitFee: Number(e.target.value) })} /></F>
         </div>
-        <F label="Working hours (IST) — after-hours notice is sent once a day">
+        <F label="Working hours (IST)" hint="Outside these hours GreenBuddy tells customers when your team will reply, then keeps helping.">
           <div className="flex items-center gap-2"><Input type="time" className="w-32" value={f.workStart} onChange={(e) => setF({ ...f, workStart: e.target.value })} />to<Input type="time" className="w-32" value={f.workEnd} onChange={(e) => setF({ ...f, workEnd: e.target.value })} /></div>
           <div className="mt-2 flex gap-1">{DAYS.map((d, i) => { const on = f.workDays.includes(i); return <motion.button whileTap={{ scale: 0.9 }} key={d} onClick={() => setF({ ...f, workDays: on ? f.workDays.filter((x) => x !== i) : [...f.workDays, i].sort() })} className={cn("h-8 w-11 rounded-md text-xs font-semibold", on ? "bg-brand text-white" : "bg-muted text-subtle")}>{d}</motion.button> })}</div>
         </F>
+        <F label="Special instructions for GreenBuddy" hint="Optional. Plain words, e.g. offers to mention or topics to avoid."><Textarea value={g.aiPersona} onChange={(e) => setG({ ...g, aiPersona: e.target.value })} className="min-h-24" placeholder="e.g. Mention our Diwali offer only if the customer asks about discounts." /></F>
+        <F label="Message if the assistant is unavailable"><Input value={g.aiFallbackMessage} onChange={(e) => setG({ ...g, aiFallbackMessage: e.target.value })} /></F>
       </div>
       <div className="space-y-4 rounded-lg border bg-card p-4">
-        <F label="Extra instructions for GreenBuddy (added to the spec prompt)"><Textarea value={g.aiPersona} onChange={(e) => setG({ ...g, aiPersona: e.target.value })} className="min-h-40" placeholder="e.g. Mention our Diwali offer only if the customer asks about discounts." /></F>
-        <F label="Message if Claude is unavailable and no fallback rule matches"><Input value={g.aiFallbackMessage} onChange={(e) => setG({ ...g, aiFallbackMessage: e.target.value })} /></F>
-        <div className="rounded-md bg-[#fff7d6] p-3 text-[12.5px] text-[#533f04]"><b>Open items from the spec</b> (not live until confirmed): RAS expert-call fee & owner, murrel salinity limit, hydroponics water-saving figure, budget/target thresholds, Malayalam & Tamil support, past-projects Drive folder.</div>
+        <F label="Team members" hint="People you can assign leads and tasks to.">
+          <div className="flex flex-wrap gap-2">
+            <AnimatePresence initial={false}>
+              {g.agents.map((a) => (
+                <motion.span key={a} layout initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="flex items-center gap-1.5 rounded-full border py-1 pr-1.5 pl-3 text-[13px]">
+                  {a}<button onClick={() => setG({ ...g, agents: g.agents.filter((x) => x !== a) })} className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"><Trash2 className="size-3.5" /></button>
+                </motion.span>
+              ))}
+            </AnimatePresence>
+          </div>
+          <form onSubmit={(e) => { e.preventDefault(); addAgent() }} className="mt-2 flex gap-2"><Input value={newAgent} onChange={(e) => setNewAgent(e.target.value)} placeholder="Teammate name" className="max-w-64" /><Button type="submit" variant="secondary"><Plus />Add</Button></form>
+        </F>
+        <F label="Quick replies" hint="Saved answers your team can insert in the Inbox — one per line."><Textarea value={g.quick} onChange={(e) => setG({ ...g, quick: e.target.value })} className="min-h-36" placeholder={"Thanks for reaching out!\nOur team will call you within 1 working day."} /></F>
         <Button onClick={save}><Save />Save settings</Button>
       </div>
     </div>
@@ -340,12 +360,11 @@ export default function BotPage() {
   const { data: b } = useBotSettings()
   return (
     <div className="px-6 py-5 lg:px-10">
-      <PageHeader crumbs={["GreenBuddy"]} title={<span className="flex items-center gap-2"><Bot className="size-6 text-[#1f845a]" />GreenBuddy bot</span>} actions={<Lozenge tone="green"><CalendarCheck className="mr-1 size-3" />Spec v1 · Terrace · Hydroponics · RAS</Lozenge>} />
+      <PageHeader crumbs={["GreenBuddy"]} title={<span className="flex items-center gap-2"><Bot className="size-6 text-[#1f845a]" />GreenBuddy</span>} actions={<span className="text-[13px] text-muted-foreground">Your WhatsApp assistant</span>} />
       {!spec || !b ? <Skeleton className="h-96" /> : (
-        <Tabs defaultValue="architecture">
-          <TabsList variant="line" className="mb-4"><TabsTrigger value="architecture">Architecture</TabsTrigger><TabsTrigger value="simulator">Simulator</TabsTrigger><TabsTrigger value="answers">Approved answers</TabsTrigger><TabsTrigger value="settings">Settings</TabsTrigger></TabsList>
-          <TabsContent value="architecture"><Architecture spec={spec} b={b} /></TabsContent>
-          <TabsContent value="simulator"><Simulator spec={spec} /></TabsContent>
+        <Tabs defaultValue="test">
+          <TabsList variant="line" className="mb-4"><TabsTrigger value="test">Test chat</TabsTrigger><TabsTrigger value="answers">Approved answers</TabsTrigger><TabsTrigger value="settings">Settings</TabsTrigger></TabsList>
+          <TabsContent value="test"><Simulator spec={spec} /></TabsContent>
           <TabsContent value="answers"><Answers b={b} /></TabsContent>
           <TabsContent value="settings"><BotSettingsTab b={b} /></TabsContent>
         </Tabs>

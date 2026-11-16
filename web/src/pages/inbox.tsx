@@ -56,7 +56,7 @@ function Thread({ c }: { c: ContactDetail }) {
   let lastDay = ""
   return (
     <div ref={ref} className="scrollbar-thin flex flex-1 flex-col gap-1.5 overflow-y-auto px-6 py-5">
-      {!c.messages?.length && <EmptyState icon={MessageSquareText} title="No messages yet">Send an approved template to start the conversation — free-form messages are only allowed within 24h of the customer's last message.</EmptyState>}
+      {!c.messages?.length && <EmptyState icon={MessageSquareText} title="No messages yet">Messages appear here as soon as this customer writes to you on WhatsApp.</EmptyState>}
       <AnimatePresence initial={false}>
         {(c.messages || []).map((m) => {
           const day = fmtDate(m.timestamp)
@@ -79,7 +79,6 @@ function Composer({ c }: { c: ContactDetail }) {
   const ui = useUI()
   const send = useSendMessage(c.id)
   const { data: settings } = useSettings()
-  const { data: rules = [] } = useRules()
   const [text, setText] = useState("")
   const ta = useRef<HTMLTextAreaElement>(null)
   const left = windowLeft(c.lastInboundAt)
@@ -94,15 +93,14 @@ function Composer({ c }: { c: ContactDetail }) {
     setText("")
     send.mutate({ text: body })
   }
-  const quick = [...(settings?.quickReplies || []), ...rules.filter((r) => r.reply).map((r) => r.reply)]
+  const quick = settings?.quickReplies || []
 
   if (!left)
     return (
       <div className="border-t bg-background px-5 py-4">
         <div className="flex flex-wrap items-center gap-3 rounded-md bg-[#fff7d6] px-3 py-2.5 text-[13px] text-[#533f04]">
           <Clock className="size-4 shrink-0" />
-          <span className="flex-1">The 24-hour service window is closed. WhatsApp only allows an approved <b>template</b> until the customer replies.</span>
-          <Button size="sm" onClick={() => ui.openTemplate(c.id)}><FileText />Send template</Button>
+          <span className="flex-1">It's been more than 24 hours since this customer's last message, so WhatsApp doesn't allow a new reply yet. As soon as they message again, you (and GreenBuddy) can reply here.</span>
         </div>
       </div>
     )
@@ -119,11 +117,10 @@ function Composer({ c }: { c: ContactDetail }) {
             <DropdownMenuContent align="start" className="max-h-80 w-80 overflow-y-auto">
               <DropdownMenuLabel>Insert a saved reply</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {quick.length === 0 && <div className="px-2 py-3 text-sm text-muted-foreground">Add quick replies in Bot & automations</div>}
+              {quick.length === 0 && <div className="px-2 py-3 text-sm text-muted-foreground">Add quick replies in GreenBuddy → Settings</div>}
               {quick.map((q, i) => <DropdownMenuItem key={i} onClick={() => { setText(q); ta.current?.focus() }}><span className="truncate">{q}</span></DropdownMenuItem>)}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="ghost" size="sm" onClick={() => ui.openTemplate(c.id)}><FileText />Template</Button>
           <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground"><Clock className="size-3.5" />{left}</span>
           <motion.div whileTap={{ scale: 0.92 }}>
             <Button size="sm" onClick={submit} disabled={!text.trim()}><Send />Send</Button>
