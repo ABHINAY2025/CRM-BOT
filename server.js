@@ -522,7 +522,10 @@ app.post('/api/contacts/:id/messages', ah(async (req, res) => {
   const c = await store.contacts.get(req.params.id);
   if (!c) return res.status(404).json({ error: 'Not found' });
   const { text, template, language, components, buttons } = req.body;
-  if (!text && !template) return res.status(400).json({ error: 'Message text or template is required' });
+  // Business-initiated templates are switched off unless explicitly enabled (ALLOW_TEMPLATES=true)
+  if (template && process.env.ALLOW_TEMPLATES !== 'true') return res.status(403).json({ error: 'Template messages are turned off' });
+  if (!text && !template) return res.status(400).json({ error: 'Message text is required' });
+  if (!template && !windowOpen(c)) return res.status(400).json({ error: "This chat is older than 24 hours — wait for the customer's next message" });
   const msg = await sendToContact(c, { text, template, language, components, buttons });
   res.status(msg.status === 'failed' ? 502 : 200).json(msg);
 }));
@@ -591,6 +594,7 @@ app.get('/api/templates', ah(async (_req, res) => {
 
 app.get('/api/broadcasts', ah(async (_req, res) => res.json(await store.broadcasts.list({}, { createdAt: -1 }))));
 app.post('/api/broadcasts', ah(async (req, res) => {
+  if (process.env.ALLOW_TEMPLATES !== 'true') return res.status(403).json({ error: 'Broadcasts are turned off' });
   const { name, template, language, params = [], audience = {} } = req.body;
   if (!template) return res.status(400).json({ error: 'Choose a template' });
   let targets = await store.contacts.list();
